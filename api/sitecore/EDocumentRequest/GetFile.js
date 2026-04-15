@@ -15,7 +15,9 @@ module.exports = function handler(req, res) {
   // 3. معالجة طلب POST
   if (req.method === 'POST') {
     try {
-      const filePath = path.join(process.cwd(), 'public', '7026902499.pdf');
+      // السطر الذي تم تعديله ليقرأ الملف من نفس المجلد
+      const filePath = path.join(__dirname, '7026902499.pdf');
+      
       const fileBuffer = fs.readFileSync(filePath);
 
       res.setHeader('Content-Type', 'application/octet-stream'); 
