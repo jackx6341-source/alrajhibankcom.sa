@@ -1,24 +1,24 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
+  // 1. إعداد ترويسات CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Sec-Ch-Ua, Sec-Ch-Ua-Platform');
 
+  // 2. معالجة طلب OPTIONS
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // 3. معالجة طلب POST
   if (req.method === 'POST') {
     try {
-      // تعديل اسم الملف هنا ليتطابق مع ملفك
       const filePath = path.join(process.cwd(), 'public', '7026902499.pdf');
-
       const fileBuffer = fs.readFileSync(filePath);
 
       res.setHeader('Content-Type', 'application/octet-stream'); 
-      // تعديل اسم الملف الذي سيتم تحميله للمستخدم
       res.setHeader('Content-Disposition', 'attachment; filename=7026902499.pdf');
       res.setHeader('Content-Length', fileBuffer.length);
       res.setHeader('Cache-Control', 'no-cache, no-store');
@@ -34,4 +34,4 @@ export default function handler(req, res) {
   } else {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
-}
+};
