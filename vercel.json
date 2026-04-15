@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/edocument-request",
+      "permanent": true
+    }
+  ]
+}
