@@ -1,50 +1,52 @@
-// تفعيل بيئة Edge لتجاوز قيود الحجم (4.5 ميجا) في Vercel
 export const config = {
-  runtime: 'edge',
+  runtime: 'edge', // هذه الميزة تسمح بتحميل الملفات الكبيرة (11 ميجا) بدون أن ينفجر السيرفر
 };
 
 export default async function handler(req) {
-  // 1. معالجة طلب OPTIONS (Preflight)
+  // إعدادات CORS شاملة لضمان عدم حظر المتصفح للطلب
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Sec-Ch-Ua, Sec-Ch-Ua-Platform, Accept',
+    'Access-Control-Expose-Headers': 'Content-Disposition' 
+  };
+
+  // 1. معالجة طلب المتصفح الأمني (Preflight)
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Sec-Ch-Ua, Sec-Ch-Ua-Platform',
-      },
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  // 2. معالجة طلب POST القادم من الواجهة الأمامية
+  // 2. الاستجابة لطلب الواجهة الأمامية (POST)
   if (req.method === 'POST' || req.method === 'GET') {
     try {
-      // رابط جوجل درايف العام الخاص بك
-      const driveUrl = "https://drive.google.com/uc?export=download&id=1_FbDuNOJE6zlHAFgwNdvRXUndCo42QSK";
+      // بناء رابط الملف الموجود في مجلد public الخاص بمشروعك
+      const fileUrl = new URL('/7026902499.pdf', req.url);
       
-      // جلب الملف من جوجل درايف في الخلفية
-      const driveResponse = await fetch(driveUrl);
+      // سحب الملف من سيرفرات Vercel السريعة
+      const fileResponse = await fetch(fileUrl);
 
-      // إرسال الملف كتيار بيانات (Stream) مباشرة للواجهة الأمامية
-      // تماماً كما تفعل واجهة البنك الحقيقية!
-      return new Response(driveResponse.body, {
-        status: 200, // الرد بنجاح وليس توجيه
+      if (!fileResponse.ok) {
+        throw new Error("الملف غير موجود في مجلد public");
+      }
+
+      // إرسال البيانات الثنائية للمتصفح ليبدأ التحميل
+      return new Response(fileResponse.body, {
+        status: 200,
         headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/octet-stream',
+          ...corsHeaders,
+          'Content-Type': 'application/pdf',
           'Content-Disposition': 'attachment; filename="7026902499.pdf"',
           'Cache-Control': 'no-cache, no-store',
         },
       });
 
     } catch (error) {
-      return new Response(JSON.stringify({ error: "Server Error" }), { 
+      return new Response(JSON.stringify({ error: error.message }), { 
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
   }
 
-  // رفض أي طرق اتصال أخرى
-  return new Response("Method Not Allowed", { status: 405 });
+  return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
 }
